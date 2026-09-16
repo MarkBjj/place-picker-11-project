@@ -6,12 +6,16 @@ import { sortPlacesByDistance } from "./loc.js";
 import Modal from "./components/Modal.jsx";
 import DeleteConfirmation from "./components/DeleteConfirmation.jsx";
 import logoImg from "./assets/logo.png";
+const storedIds = JSON.parse(localStorage.getItem("selectedPlaces")) || [];
+const storedPlaces = storedIds.map((id) =>
+  AVAILABLE_PLACES.find((place) => place.id === id),
+);
 
 function App() {
   const modal = useRef();
   const selectedPlace = useRef();
-  const [pickedPlaces, setPickedPlaces] = useState([]);
   const [availablePlaces, setAvailablePlaces] = useState([]);
+  const [pickedPlaces, setPickedPlaces] = useState(storedPlaces);
 
   //2nd parameter of useEffect is a dependency / an empty array, so this effect will only run once when the component mounts
   useEffect(() => {
@@ -50,11 +54,27 @@ function App() {
       const place = AVAILABLE_PLACES.find((place) => place.id === id);
       return [place, ...prevPickedPlaces];
     });
+
+    //non useEffect example
+    const storedIds = JSON.parse(localStorage.getItem("selectedPlaces")) || [];
+    if (storedIds.indexOf(id) === -1) {
+      localStorage.setItem(
+        "selectedPlaces",
+        JSON.stringify([id, ...storedIds]),
+      );
+    }
   }
 
   function handleRemovePlace() {
     setPickedPlaces((prevPickedPlaces) =>
       prevPickedPlaces.filter((place) => place.id !== selectedPlace.current),
+    );
+    //remove from local storage
+    const storedIds = JSON.parse(localStorage.getItem("selectedPlaces")) || [];
+    //const updatedIds = storedIds.filter((id) => id !== selectedPlace.current);
+    localStorage.setItem(
+      "selectedPlaces",
+      JSON.stringify(storedIds.filter((id) => id !== selectedPlace.current)),
     );
     modal.current.close();
   }
@@ -86,7 +106,9 @@ function App() {
         <Places
           title="Available Places"
           places={availablePlaces}
-          fallbackText={"Sorting places by proximity to your current location..."}
+          fallbackText={
+            "Sorting places by proximity to your current location..."
+          }
           onSelectPlace={handleSelectPlace}
         />
       </main>
